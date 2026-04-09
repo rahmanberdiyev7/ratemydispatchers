@@ -1,0 +1,201 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function userProfileDoc() {
+      return get(/databases/$(database)/documents/userProfiles/$(request.auth.uid));
+    }
+
+    function hasUserProfile() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid));
+    }
+
+    function platformRole() {
+      return hasUserProfile()
+        ? userProfileDoc().data.platformRole
+        : "user";
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        (platformRole() == "admin" || platformRole() == "super_admin");
+    }
+
+    function isSuperAdmin() {
+      return signedIn() && platformRole() == "super_admin";
+    }
+
+    function onlyAllowedUserProfileFields() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly([
+        "displayName",
+        "accountType",
+        "driverSubtype",
+        "verificationStatus",
+        "verificationRequestedAt",
+        "updatedAt"
+      ]);
+    }
+
+    function validAccountType() {
+      return !("accountType" in request.resource.data)
+        || request.resource.data.accountType == null
+        || request.resource.data.accountType in [
+          "dispatcher",
+          "carrier",
+          "driver",
+          "broker"
+        ];
+    }
+
+    function validDriverSubtype() {
+      return !("driverSubtype" in request.resource.data)
+        || request.resource.data.driverSubtype == null
+        || request.resource.data.driverSubtype in [
+          "owner_operator",
+          "company_driver"
+        ];
+    }
+
+    function validVerificationStatus() {
+      return !("verificationStatus" in request.resource.data)
+        || request.resource.data.verificationStatus in [
+          "unverified",
+          "pending",
+          "verified"
+        ];
+    }
+
+    function validTier() {
+      return !("tier" in request.resource.data)
+        || request.resource.data.tier in [
+          "tier1",
+          "tier2",
+          "tier3"
+        ];
+    }
+
+    function validPlatformRole() {
+      return !("platformRole" in request.resource.data)
+        || request.resource.data.platformRole in [
+          "user",
+          "admin",
+          "super_admin"
+        ];
+    }
+
+    match /userProfiles/{uid} {
+      allow read: if signedIn();
+
+      allow create: if isOwner(uid);
+
+      allow update: if
+        (
+          isOwner(uid)
+          && onlyAllowedUserProfileFields()
+          && validAccountType()
+          && validDriverSubtype()
+          && validVerificationStatus()
+        )
+        || (
+          isAdmin()
+          && validAccountType()
+          && validDriverSubtype()
+          && validVerificationStatus()
+          && validTier()
+          && validPlatformRole()
+        );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    match /aiAlerts/{alertId} {
+      allow read: if isAdmin();
+      allow create: if signedIn();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /dispatchers/{dispatcherId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /brokers/{brokerId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() || isAdmin();
+      allow delete: if signedIn() || isAdmin();
+    }
+
+    match /brokerReviews/{reviewId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() || isAdmin();
+      allow delete: if signedIn() || isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isAdmin() || signedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /marketplace/{listingId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update: if signedIn() || isAdmin();
+      allow delete: if signedIn() || isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn();
+      allow create: if signedIn() || isAdmin();
+      allow update: if signedIn() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    match /leads/{leadId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn() || isAdmin();
+      allow delete: if signedIn() || isAdmin();
+    }
+
+    match /verificationClaims/{claimId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

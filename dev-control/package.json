@@ -1,0 +1,14 @@
+{
+  "name": "dispatch-ecosystem-dev-control",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n DISPATCHHUB,RATEMYDISPATCHERS -c blue,green \"npm run dev:dispatchhub\" \"npm run dev:ratemydispatchers\"",
+    "dev:dispatchhub": "cd ../DispatchHub/dispatchhub-app && npm run dev",
+    "dev:ratemydispatchers": "cd ../RateMyDispatchers/ratemydispatchers-app && npm run dev",
+    "stop-ports": "bash ./stop-ports.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
