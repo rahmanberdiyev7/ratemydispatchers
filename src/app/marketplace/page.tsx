@@ -2,111 +2,124 @@
 
 import Link from "next/link";
 import UserRolePills from "@/components/ui/UserRolePills";
-import { calculateRankingScore } from "@/lib/reputation";
 
-type Listing = {
+type MarketplaceItem = {
   id: string;
   title: string;
-  company: string;
-  verified: boolean;
-  tier: "tier1" | "tier2" | "tier3";
-  rating: number;
-  reviews: number;
-  trustScore: number;
-  riskScore: number;
-  recentActivityScore: number;
-  profileCompleteness: number;
+  company?: string;
+  verified?: boolean;
+  tier?: "tier1" | "tier2" | "tier3";
+  reviews?: number;
+  trustScore?: number;
+  rankScore?: number;
 };
 
-const LISTINGS: Listing[] = [
+const LISTINGS: MarketplaceItem[] = [
   {
-    id: "m1",
-    title: "Power only dispatch support",
-    company: "Delo",
+    id: "mp-1",
+    title: "Experienced Flatbed Dispatcher",
+    company: "Delo Trans",
     verified: true,
     tier: "tier1",
-    rating: 4.3,
-    reviews: 3,
-    trustScore: 54,
-    riskScore: 30,
-    recentActivityScore: 78,
-    profileCompleteness: 92,
+    reviews: 12,
+    trustScore: 97,
+    rankScore: 99,
   },
   {
-    id: "m2",
-    title: "Flatbed specialist dispatch",
-    company: "Prime Route Logistics",
+    id: "mp-2",
+    title: "Owner-Operator Focused Dispatch Support",
+    company: "Prime Dispatch",
     verified: true,
-    tier: "tier3",
-    rating: 4.6,
-    reviews: 28,
-    trustScore: 81,
-    riskScore: 12,
-    recentActivityScore: 91,
-    profileCompleteness: 98,
+    tier: "tier1",
+    reviews: 8,
+    trustScore: 91,
+    rankScore: 94,
+  },
+  {
+    id: "mp-3",
+    title: "General Freight Dispatcher",
+    company: "Fast Lane Logistics",
+    verified: false,
+    tier: "tier2",
+    reviews: 4,
+    trustScore: 74,
+    rankScore: 79,
   },
 ];
 
 export default function MarketplacePage() {
   return (
     <div className="container">
-      <h1 className="h1">Marketplace</h1>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+        }}
+      >
+        <div>
+          <h1 className="h1" style={{ marginBottom: 6 }}>
+            Marketplace
+          </h1>
+          <div className="small" style={{ opacity: 0.92 }}>
+            Browse listings with trust signals, verification, and ranking details.
+          </div>
+        </div>
 
-      <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
-        {LISTINGS.map((item) => {
-          const score = calculateRankingScore({
-            verified: item.verified,
-            rating: item.rating,
-            reviewCount: item.reviews,
-            trustScore: item.trustScore,
-            riskScore: item.riskScore,
-            tier: item.tier,
-            recentActivityScore: item.recentActivityScore,
-            profileCompleteness: item.profileCompleteness,
-          });
+        <div className="row wrap" style={{ gap: 10 }}>
+          <Link className="btn secondary" href="/marketplace/new">
+            Create Listing
+          </Link>
+        </div>
+      </div>
 
-          return (
-            <div key={item.id} className="card" style={{ padding: 16 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 18 }}>{item.title}</div>
+      <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+        {LISTINGS.map((item) => (
+          <div key={item.id} className="card" style={{ padding: 16 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 14,
+                flexWrap: "wrap",
+                alignItems: "flex-start",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <div style={{ fontWeight: 900, fontSize: 18 }}>{item.title}</div>
 
-                  <div className="small" style={{ marginTop: 4 }}>
-                    {item.company}
-                  </div>
-
-                  <div style={{ marginTop: 10 }}>
-                    <UserRolePills
-                      profile={{
-                        platformRole: "dispatcher",
-                        verificationStatus: item.verified ? "verified" : "unverified",
-                        tier: item.tier,
-                        driverType: null,
-                      }}
-                    />
-                  </div>
-
-                  <div className="small" style={{ marginTop: 8 }}>
-                    ⭐ {item.rating} · {item.reviews} reviews · Trust: {item.trustScore} ·
-                    Rank Score: {score.total}
-                  </div>
+                <div className="small" style={{ marginTop: 4 }}>
+                  {item.company}
                 </div>
 
-                <Link href="/dispatchers" className="btn secondary">
-                  View dispatcher
+                <div style={{ marginTop: 10 }}>
+                  <UserRolePills
+                    profile={{
+                      platformRole: "user",
+                      accountType: "dispatcher",
+                      verificationStatus: item.verified ? "verified" : "unverified",
+                      tier: (item.tier ?? "tier1") as "tier1" | "tier2" | "tier3",
+                      driverType: null,
+                    }}
+                  />
+                </div>
+
+                <div className="small" style={{ marginTop: 10 }}>
+                  ★ {item.rating ?? item.trustScore ?? 0} · {item.reviews ?? 0} reviews · Trust:{" "}
+                  {item.trustScore ?? 0} · Rank Score: {item.rankScore ?? 0}
+                </div>
+              </div>
+
+              <div>
+                <Link className="btn secondary" href={`/marketplace/${item.id}`}>
+                  Open listing
                 </Link>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

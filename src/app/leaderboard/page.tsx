@@ -1,121 +1,148 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import UserRolePills from "@/components/ui/UserRolePills";
-import { getRankedDispatchers, type RankedDispatcher } from "@/lib/rankedDispatchers";
+
+type LeaderboardItem = {
+  id: string;
+  name: string;
+  company?: string;
+  verified?: boolean;
+  tier?: "tier1" | "tier2" | "tier3";
+  computedRating: number;
+  computedReviewCount: number;
+  computedTrustScore: number;
+  computedRiskScore: number;
+};
+
+const ITEMS: LeaderboardItem[] = [
+  {
+    id: "disp-1",
+    name: "Sam Alm",
+    company: "Delo Trans",
+    verified: true,
+    tier: "tier1",
+    computedRating: 5,
+    computedReviewCount: 12,
+    computedTrustScore: 98,
+    computedRiskScore: 3,
+  },
+  {
+    id: "disp-2",
+    name: "Anna Reed",
+    company: "Prime Dispatch",
+    verified: true,
+    tier: "tier1",
+    computedRating: 4.8,
+    computedReviewCount: 18,
+    computedTrustScore: 95,
+    computedRiskScore: 5,
+  },
+  {
+    id: "disp-3",
+    name: "Mike Turner",
+    company: "Fast Lane Logistics",
+    verified: false,
+    tier: "tier2",
+    computedRating: 4.2,
+    computedReviewCount: 6,
+    computedTrustScore: 82,
+    computedRiskScore: 12,
+  },
+];
 
 export default function LeaderboardPage() {
-  const [items, setItems] = useState<RankedDispatcher[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      setLoading(true);
-      try {
-        const rows = await getRankedDispatchers(200);
-        if (alive) setItems(rows);
-      } catch (e) {
-        console.error("Failed to load leaderboard", e);
-        if (alive) setItems([]);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   return (
     <div className="container">
-      <h1 className="h1">Leaderboard</h1>
-
-      {loading ? (
-        <div className="small" style={{ marginTop: 16 }}>Loading leaderboard…</div>
-      ) : items.length === 0 ? (
-        <div className="card" style={{ padding: 16, marginTop: 14 }}>
-          <div style={{ fontWeight: 900 }}>No dispatchers found</div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+        }}
+      >
+        <div>
+          <h1 className="h1" style={{ marginBottom: 6 }}>
+            Leaderboard
+          </h1>
+          <div className="small" style={{ opacity: 0.92 }}>
+            Top ranked dispatchers based on trust, reviews, and risk signals.
+          </div>
         </div>
-      ) : (
-        <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
-          {items.map((d, index) => (
-            <div key={d.id} className="card" style={{ padding: 16 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "stretch",
-                  flexWrap: "wrap",
-                  gap: 12,
-                }}
-              >
-                <Link
-                  href={`/dispatchers/${d.id}`}
+
+        <div className="row wrap" style={{ gap: 10 }}>
+          <Link className="btn secondary" href="/dispatchers">
+            All Dispatchers
+          </Link>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+        {ITEMS.map((d, index) => (
+          <div key={d.id} className="card" style={{ padding: 16 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 14,
+                flexWrap: "wrap",
+                alignItems: "flex-start",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <div
+                  className="row wrap"
                   style={{
-                    flex: 1,
-                    minWidth: 260,
-                    color: "inherit",
-                    textDecoration: "none",
-                    display: "block",
-                    borderRadius: 16,
+                    gap: 8,
+                    alignItems: "center",
+                    fontWeight: 900,
+                    fontSize: 16,
                   }}
                 >
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        flexWrap: "wrap",
-                        fontWeight: 900,
-                        fontSize: 16,
-                      }}
-                    >
-                      <span>#{index + 1}</span>
-
-                      <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>
-                        {(d as any).name ?? "Unnamed Dispatcher"}
-                      </span>
-
-                      <UserRolePills
-                        profile={{
-                          platformRole: "dispatcher",
-                          verificationStatus: d.computedVerified ? "verified" : "unverified",
-                          tier: d.computedTier,
-                          driverType: null,
-                        }}
-                      />
-                    </div>
-
-                    <div className="small" style={{ marginTop: 4 }}>
-                      {(d as any).company ?? "—"}
-                    </div>
-
-                    <div className="small" style={{ marginTop: 6 }}>
-                      ⭐ {d.computedRating.toFixed(1)} · {d.computedReviewCount} reviews · Trust:{" "}
-                      {d.computedTrustScore} · Risk: {d.computedRiskScore} · Rank Score: {d.rankingScore}
-                    </div>
-                  </div>
-                </Link>
-
-                <div style={{ display: "flex", alignItems: "center", minWidth: 180 }}>
-                  <Link
-                    href={`/dispatchers/${d.id}`}
-                    className="btn secondary"
-                    style={{ width: "100%", textAlign: "center" }}
+                  <span>#{index + 1}</span>
+                  <span
+                    style={{
+                      textDecoration: "underline",
+                      textUnderlineOffset: 3,
+                    }}
                   >
-                    View profile
-                  </Link>
+                    {d.name || "Unnamed Dispatcher"}
+                  </span>
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <UserRolePills
+                    profile={{
+                      platformRole: "user",
+                      accountType: "dispatcher",
+                      verificationStatus: d.verified ? "verified" : "unverified",
+                      tier: (d.tier ?? "tier1") as "tier1" | "tier2" | "tier3",
+                      driverType: null,
+                    }}
+                  />
+                </div>
+
+                <div className="small" style={{ marginTop: 10 }}>
+                  {d.company || "—"}
+                </div>
+
+                <div className="small" style={{ marginTop: 10 }}>
+                  ★ {d.computedRating.toFixed(1)} · {d.computedReviewCount} reviews · Trust:{" "}
+                  {d.computedTrustScore} · Risk: {d.computedRiskScore}
                 </div>
               </div>
+
+              <div>
+                <Link className="btn secondary" href={`/dispatchers/${d.id}`}>
+                  View profile
+                </Link>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

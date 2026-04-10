@@ -290,9 +290,10 @@ export default function DispatcherWatchlist() {
 
                     <UserRolePills
                       profile={{
-                        platformRole: "dispatcher",
-                        verificationStatus: d.verified ? "verified" : "unverified",
-                        tier: (d.tier ?? "tier1") as "tier1" | "tier2" | "tier3",
+                        platformRole: "user",
+                        accountType: "dispatcher",
+                        verificationStatus: (dispatcher as any).verified ? "verified" : "unverified",
+                        tier: (((dispatcher as any).tier ?? "tier1") as "tier1" | "tier2" | "tier3"),
                         driverType: null,
                       }}
                     />
