@@ -141,8 +141,8 @@ export default function ScamWatchlistPage() {
                       {d.name || "Dispatcher"}
                     </div>
 
-                    {d.verified ? (
-                      <VerifiedBadge variant="verified" compact />
+                    {dispatcher.verified ? (
+                      <VerifiedBadge />
                     ) : (
                       <span className="badge">Unverified</span>
                     )}
