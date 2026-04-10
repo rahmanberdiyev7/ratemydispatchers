@@ -176,7 +176,8 @@ export default function BrokerWatchlist() {
 
                   <UserRolePills
                     profile={{
-                      platformRole: "broker",
+                      platformRole: "user",
+                      accountType: "broker"
                       verificationStatus: (broker as any).verified ? "verified" : "unverified",
                       tier: (((broker as any).tier ?? "tier1") as "tier1" | "tier2" | "tier3"),
                       driverType: null,

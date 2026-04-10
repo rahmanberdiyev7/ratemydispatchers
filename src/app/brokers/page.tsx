@@ -139,10 +139,11 @@ export default function BrokersPage() {
 
                         <UserRolePills
                           profile={{
-                            platformRole: "broker",
+                            platformRole: "user",
                             verificationStatus: broker.verified ? "verified" : "unverified",
                             tier: (broker.tier as any) ?? "tier1",
                             driverType: null,
+                            accountType: "broker",
                           }}
                         />
                       </div>
