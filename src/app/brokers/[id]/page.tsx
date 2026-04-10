@@ -262,10 +262,11 @@ export default function BrokerProfilePage() {
             <div className="row wrap" style={{ gap: 10, marginTop: 10 }}>
               <UserRolePills
                 profile={{
-                  platformRole: "broker",
+                  platformRole: "user",
                   verificationStatus: broker.verified ? "verified" : "unverified",
                   tier: (broker.tier as any) ?? "tier1",
                   driverType: null,
+                  accountType: "broker",
                 }}
               />
 
