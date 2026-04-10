@@ -1,67 +1,49 @@
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  updateDoc,
-  doc,
-  orderBy,
-  limit,
-} from "firebase/firestore";
-import { db } from "./firebase";
+"use client";
 
-export type AIFlaggedProfile = {
-  id: string;
-  name?: string;
-  company?: string;
-  aiRiskScore: number;
-  aiRiskLevel: "low" | "medium" | "high" | "critical";
-  aiSignals: string[];
-  aiFlagged: boolean;
-  aiOverridden: boolean;
-  aiOverrideReason?: string;
-  createdAt?: any;
-};
+import VerifiedBadge from "@/components/ui/VerifiedBadge";
 
-export async function listAIFlaggedDispatchers(): Promise<AIFlaggedProfile[]> {
-  const q = query(
-    collection(db, "dispatchers"),
-    where("aiFlagged", "==", true),
-    orderBy("aiRiskScore", "desc"),
-    limit(100)
+export default function ScamSkeeterPage() {
+  // Mock data (replace later with real data)
+  const data = [
+    {
+      id: "1",
+      name: "John Dispatcher",
+      verified: true,
+    },
+    {
+      id: "2",
+      name: "Mike Carrier",
+      verified: false,
+    },
+  ];
+
+  return (
+    <div className="container">
+      <h1 className="h1">Scam Skeeter</h1>
+
+      <div className="card" style={{ marginTop: 16 }}>
+        {data.map((d) => (
+          <div
+            key={d.id}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: 12,
+              borderBottom: "1px solid #222",
+            }}
+          >
+            <div>{d.name}</div>
+
+            <div>
+              {d.verified ? (
+                <VerifiedBadge />
+              ) : (
+                <span className="badge">Unverified</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
-
-  const snap = await getDocs(q);
-
-  return snap.docs.map((d) => ({
-    id: d.id,
-    ...(d.data() as any),
-  }));
-}
-
-export async function forceFlagDispatcher(id: string) {
-  await updateDoc(doc(db, "dispatchers", id), {
-    aiFlagged: true,
-    aiOverridden: false,
-    updatedAt: new Date(),
-  });
-}
-
-export async function clearFlagDispatcher(id: string) {
-  await updateDoc(doc(db, "dispatchers", id), {
-    aiFlagged: false,
-    aiOverridden: true,
-    updatedAt: new Date(),
-  });
-}
-
-export async function overrideAIFlag(
-  id: string,
-  reason: string
-) {
-  await updateDoc(doc(db, "dispatchers", id), {
-    aiOverridden: true,
-    aiOverrideReason: reason,
-    updatedAt: new Date(),
-  });
 }
