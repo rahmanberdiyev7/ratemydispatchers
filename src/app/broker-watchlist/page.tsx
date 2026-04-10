@@ -101,11 +101,12 @@ export default function BrokerWatchlistPage() {
 
                         <UserRolePills
                           profile={{
-                            platformRole: "broker",
+                            platformRole: "user",
                             verificationStatus: broker.verified ? "verified" : "unverified",
-                            tier: (broker.tier as any) ?? "tier1",
+                            tier: (broker.tier ?? "tier1") as "tier1" | "tier2" | "tier3",
                             driverType: null,
-                          }}
+                            accountType: "broker",
+                           }}
                         />
                       </div>
 
