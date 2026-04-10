@@ -1,49 +1,31 @@
 "use client";
 
-import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-export default function ScamSkeeterPage() {
-  // Mock data (replace later with real data)
-  const data = [
-    {
-      id: "1",
-      name: "John Dispatcher",
-      verified: true,
-    },
-    {
-      id: "2",
-      name: "Mike Carrier",
-      verified: false,
-    },
-  ];
+export async function forceFlagDispatcher(id: string) {
+  await updateDoc(doc(db, "dispatchers", id), {
+    aiFlagged: true,
+    aiOverridden: false,
+    updatedAt: serverTimestamp(),
+  });
+}
 
-  return (
-    <div className="container">
-      <h1 className="h1">Scam Skeeter</h1>
+export async function clearFlagDispatcher(id: string) {
+  await updateDoc(doc(db, "dispatchers", id), {
+    aiFlagged: false,
+    aiOverridden: true,
+    updatedAt: serverTimestamp(),
+  });
+}
 
-      <div className="card" style={{ marginTop: 16 }}>
-        {data.map((d) => (
-          <div
-            key={d.id}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: 12,
-              borderBottom: "1px solid #222",
-            }}
-          >
-            <div>{d.name}</div>
-
-            <div>
-              {d.verified ? (
-                <VerifiedBadge />
-              ) : (
-                <span className="badge">Unverified</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+export async function overrideAIFlag(input: {
+  id: string;
+  reason: string;
+}) {
+  await updateDoc(doc(db, "dispatchers", input.id), {
+    aiOverridden: true,
+    aiOverrideReason: input.reason,
+    updatedAt: serverTimestamp(),
+  });
 }
