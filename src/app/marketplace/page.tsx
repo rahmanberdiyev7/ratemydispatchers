@@ -91,7 +91,7 @@ export default function MarketplacePage() {
                 <div style={{ fontWeight: 900, fontSize: 18 }}>{item.title}</div>
 
                 <div className="small" style={{ marginTop: 4 }}>
-                  {item.company}
+                  {item.company || "—"}
                 </div>
 
                 <div style={{ marginTop: 10 }}>
@@ -100,14 +100,14 @@ export default function MarketplacePage() {
                       platformRole: "user",
                       accountType: "dispatcher",
                       verificationStatus: item.verified ? "verified" : "unverified",
-                      tier: (item.tier ?? "tier1") as "tier1" | "tier2" | "tier3",
+                      tier: item.tier ?? "tier1",
                       driverType: null,
                     }}
                   />
                 </div>
 
                 <div className="small" style={{ marginTop: 10 }}>
-                  ★ {item.rating ?? item.trustScore ?? 0} · {item.reviews ?? 0} reviews · Trust:{" "}
+                  ★ {item.trustScore ?? 0} · {item.reviews ?? 0} reviews · Trust:{" "}
                   {item.trustScore ?? 0} · Rank Score: {item.rankScore ?? 0}
                 </div>
               </div>
