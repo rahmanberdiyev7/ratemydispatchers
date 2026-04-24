@@ -1,124 +1,97 @@
-"use client";
-
-import { calculateRankingScore } from "@/lib/reputation";
-
 type TrustBadgeProps = {
   verified?: boolean;
   reviewCount?: number;
   ratingSum?: number;
-  trustScore?: number;
-  riskScore?: number;
-  tier?: "tier1" | "tier2" | "tier3" | string | null;
-  recentActivityScore?: number;
-  profileCompleteness?: number;
-  size?: "sm" | "md";
+  hasMarketplaceListing?: boolean;
+  marketplaceReviewCount?: number;
+  marketplaceRating?: number;
+  marketplaceRanking?: number;
+  size?: "sm" | "md" | "lg";
   showScore?: boolean;
   showBadgeLabel?: boolean;
 };
 
-function getTierLabel(tier?: string | null) {
-  if (tier === "tier3") return "Tier 3";
-  if (tier === "tier2") return "Tier 2";
-  return "Tier 1";
-}
+function calculateTrustScore(input: TrustBadgeProps) {
+  let score = 50;
 
-function getTierStyles(tier?: string | null) {
-  if (tier === "tier3") {
-    return {
-      background: "linear-gradient(180deg, rgba(117,255,214,0.2) 0%, rgba(56,189,248,0.16) 100%)",
-      border: "1px solid rgba(103,232,249,0.45)",
-      color: "#dffcff",
-    };
-  }
+  if (input.verified) score += 20;
 
-  if (tier === "tier2") {
-    return {
-      background: "linear-gradient(180deg, rgba(129,140,248,0.18) 0%, rgba(99,102,241,0.12) 100%)",
-      border: "1px solid rgba(129,140,248,0.35)",
-      color: "#eef2ff",
-    };
-  }
+  const reviewCount = Number(input.reviewCount ?? 0);
+  const ratingSum = Number(input.ratingSum ?? 0);
+  const avgRating = reviewCount > 0 ? ratingSum / reviewCount : 0;
 
-  return {
-    background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "#f5f7ff",
-  };
-}
+  if (reviewCount >= 10) score += 15;
+  else if (reviewCount >= 5) score += 10;
+  else if (reviewCount >= 1) score += 5;
 
-function getBadgeLabel(score: number, verified?: boolean) {
-  if (verified && score >= 120) return "Elite Trusted";
-  if (verified && score >= 90) return "Verified Trusted";
-  if (score >= 110) return "Top Ranked";
-  if (score >= 80) return "Strong Reputation";
-  if (score >= 55) return "Rising";
-  return "New";
+  if (avgRating >= 4.5) score += 15;
+  else if (avgRating >= 4) score += 10;
+  else if (avgRating >= 3.5) score += 5;
+
+  if (input.hasMarketplaceListing) score += 5;
+
+  const marketplaceReviewCount = Number(input.marketplaceReviewCount ?? 0);
+  const marketplaceRating = Number(input.marketplaceRating ?? 0);
+
+  if (marketplaceReviewCount >= 5) score += 5;
+  if (marketplaceRating >= 4.5) score += 5;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 export default function TrustBadge({
-  verified,
+  verified = false,
   reviewCount = 0,
   ratingSum = 0,
-  trustScore = 0,
-  riskScore = 0,
-  tier = "tier1",
-  recentActivityScore = 0,
-  profileCompleteness = 0,
-  size = "sm",
+  hasMarketplaceListing = false,
+  marketplaceReviewCount = 0,
+  marketplaceRating = 0,
+  marketplaceRanking = 0,
+  size = "md",
   showScore = true,
   showBadgeLabel = true,
 }: TrustBadgeProps) {
-  const avgRating = reviewCount > 0 ? ratingSum / reviewCount : 0;
-
-  const rep = calculateRankingScore({
+  const score = calculateTrustScore({
     verified,
-    rating: avgRating,
     reviewCount,
-    trustScore,
-    riskScore,
-    tier,
-    recentActivityScore,
-    profileCompleteness,
+    ratingSum,
+    hasMarketplaceListing,
+    marketplaceReviewCount,
+    marketplaceRating,
+    marketplaceRanking,
   });
 
-  const fontSize = size === "md" ? 13 : 12;
-  const pad = size === "md" ? "7px 11px" : "6px 10px";
-  const tierStyles = getTierStyles(tier);
-  const badgeLabel = getBadgeLabel(rep.total, verified);
+  const label =
+    score >= 90
+      ? "Elite Trust"
+      : score >= 75
+      ? "High Trust"
+      : score >= 60
+      ? "Trusted"
+      : "Building Trust";
+
+  const fontSize = size === "sm" ? 11 : size === "lg" ? 14 : 12;
+  const padding = size === "sm" ? "4px 8px" : size === "lg" ? "7px 12px" : "5px 10px";
 
   return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-      <span
-        className="badge"
-        style={{
-          fontSize,
-          padding: pad,
-          ...tierStyles,
-        }}
-        title={`Tier: ${getTierLabel(tier)}`}
-      >
-        {getTierLabel(tier)}
-      </span>
-
-      {showBadgeLabel ? (
-        <span
-          className="badge"
-          style={{ fontSize, padding: pad }}
-          title={`Badge: ${badgeLabel}`}
-        >
-          {badgeLabel}
-        </span>
-      ) : null}
-
-      {showScore ? (
-        <span
-          className="badge"
-          style={{ fontSize, padding: pad }}
-          title={`Ranking score: ${rep.total}`}
-        >
-          Trust Score: <b style={{ marginLeft: 6 }}>{rep.total}</b>
-        </span>
-      ) : null}
-    </div>
+    <span
+      className="badge"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding,
+        borderRadius: 999,
+        fontSize,
+        fontWeight: 900,
+        background: "rgba(59, 130, 246, 0.14)",
+        border: "1px solid rgba(59, 130, 246, 0.35)",
+        color: "#bfdbfe",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {showBadgeLabel ? label : "Trust"}
+      {showScore ? ` · ${score}` : ""}
+    </span>
   );
 }
