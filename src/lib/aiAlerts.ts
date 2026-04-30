@@ -22,8 +22,12 @@ export type AIAlert = {
 export type AIAlertRecord = {
   id: string;
   action?: string;
+  actorEmail?: string;
+  actorUid?: string;
   entityId?: string;
   entityType?: string;
+  targetEmail?: string;
+  targetUid?: string;
   level?: AIAlertLevel;
   message?: string;
   metadata?: Record<string, unknown> | null;
@@ -33,19 +37,18 @@ export type AIAlertRecord = {
   updatedAt?: Date | string | number | null;
 };
 
+type ListAIAlertsInput =
+  | number
+  | {
+      limitCount?: number;
+      maxItems?: number;
+    };
+
 function normalizeDate(value: unknown): Date | string | number | null {
   if (!value) return null;
-
   if (value instanceof Date) return value;
-
-  if (typeof value === "string" || typeof value === "number") {
-    return value;
-  }
-
-  if (value instanceof Timestamp) {
-    return value.toDate();
-  }
-
+  if (typeof value === "string" || typeof value === "number") return value;
+  if (value instanceof Timestamp) return value.toDate();
   return null;
 }
 
@@ -60,6 +63,16 @@ function normalizeLevel(value: unknown): AIAlertLevel {
   }
 
   return "medium";
+}
+
+function normalizeLimit(input?: ListAIAlertsInput): number {
+  if (typeof input === "number") return input;
+
+  if (input && typeof input === "object") {
+    return input.limitCount ?? input.maxItems ?? 50;
+  }
+
+  return 50;
 }
 
 export function getAIAlertLevelLabel(level: AIAlertLevel) {
@@ -80,7 +93,11 @@ export function buildAIAlerts(): AIAlert[] {
   return [];
 }
 
-export async function listAIAlerts(maxItems = 50): Promise<AIAlertRecord[]> {
+export async function listAIAlerts(
+  input: ListAIAlertsInput = 50
+): Promise<AIAlertRecord[]> {
+  const maxItems = normalizeLimit(input);
+
   const q = query(
     collection(db, "aiAuditLogs"),
     orderBy("createdAt", "desc"),
@@ -95,8 +112,16 @@ export async function listAIAlerts(maxItems = 50): Promise<AIAlertRecord[]> {
     return {
       id: docSnap.id,
       action: typeof data.action === "string" ? data.action : undefined,
+      actorEmail:
+        typeof data.actorEmail === "string" ? data.actorEmail : undefined,
+      actorUid: typeof data.actorUid === "string" ? data.actorUid : undefined,
       entityId: typeof data.entityId === "string" ? data.entityId : undefined,
-      entityType: typeof data.entityType === "string" ? data.entityType : undefined,
+      entityType:
+        typeof data.entityType === "string" ? data.entityType : undefined,
+      targetEmail:
+        typeof data.targetEmail === "string" ? data.targetEmail : undefined,
+      targetUid:
+        typeof data.targetUid === "string" ? data.targetUid : undefined,
       level: normalizeLevel(data.level),
       message: typeof data.message === "string" ? data.message : undefined,
       metadata:
