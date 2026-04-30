@@ -15,6 +15,7 @@ export type AIAlert = {
   title: string;
   message: string;
   level: AIAlertLevel;
+  severity?: AIAlertLevel;
   href?: string;
   createdAt?: Date | string | number | null;
 };
@@ -29,6 +30,7 @@ export type AIAlertRecord = {
   targetEmail?: string;
   targetUid?: string;
   level?: AIAlertLevel;
+  severity?: AIAlertLevel;
   message?: string;
   metadata?: Record<string, unknown> | null;
   reason?: string;
@@ -67,11 +69,9 @@ function normalizeLevel(value: unknown): AIAlertLevel {
 
 function normalizeLimit(input?: ListAIAlertsInput): number {
   if (typeof input === "number") return input;
-
   if (input && typeof input === "object") {
     return input.limitCount ?? input.maxItems ?? 50;
   }
-
   return 50;
 }
 
@@ -108,21 +108,19 @@ export async function listAIAlerts(
 
   return snap.docs.map((docSnap) => {
     const data = docSnap.data();
+    const level = normalizeLevel(data.level ?? data.severity);
 
     return {
       id: docSnap.id,
       action: typeof data.action === "string" ? data.action : undefined,
-      actorEmail:
-        typeof data.actorEmail === "string" ? data.actorEmail : undefined,
+      actorEmail: typeof data.actorEmail === "string" ? data.actorEmail : undefined,
       actorUid: typeof data.actorUid === "string" ? data.actorUid : undefined,
       entityId: typeof data.entityId === "string" ? data.entityId : undefined,
-      entityType:
-        typeof data.entityType === "string" ? data.entityType : undefined,
-      targetEmail:
-        typeof data.targetEmail === "string" ? data.targetEmail : undefined,
-      targetUid:
-        typeof data.targetUid === "string" ? data.targetUid : undefined,
-      level: normalizeLevel(data.level),
+      entityType: typeof data.entityType === "string" ? data.entityType : undefined,
+      targetEmail: typeof data.targetEmail === "string" ? data.targetEmail : undefined,
+      targetUid: typeof data.targetUid === "string" ? data.targetUid : undefined,
+      level,
+      severity: level,
       message: typeof data.message === "string" ? data.message : undefined,
       metadata:
         data.metadata && typeof data.metadata === "object"
