@@ -69,9 +69,11 @@ function normalizeLevel(value: unknown): AIAlertLevel {
 
 function normalizeLimit(input?: ListAIAlertsInput): number {
   if (typeof input === "number") return input;
+
   if (input && typeof input === "object") {
     return input.limitCount ?? input.maxItems ?? 50;
   }
+
   return 50;
 }
 
