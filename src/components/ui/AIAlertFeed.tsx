@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AIAlert } from "@/lib/aiAlerts";
+import type { AIAlert } from "@/lib/aiAlerts";
 import { getAIAlertLevelLabel } from "@/lib/aiAlerts";
 
 type Props = {
