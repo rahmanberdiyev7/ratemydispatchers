@@ -1,14 +1,16 @@
 import {
+  addDoc,
   collection,
   getDocs,
   limit,
   orderBy,
   query,
+  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-export type AIAlertLevel = "low" | "medium" | "high" | "critical";
+export type AIAlertLevel = "low" | "medium" | "high" | "critical" | "warning" | "info";
 
 export interface AIAlert {
   id: string;
@@ -18,7 +20,7 @@ export interface AIAlert {
   severity?: AIAlertLevel;
   href?: string;
   createdAt?: Date | string | number | null;
-};
+}
 
 export type AIAlertRecord = {
   id: string;
@@ -46,6 +48,22 @@ type ListAIAlertsInput =
       maxItems?: number;
     };
 
+type CreateAIAlertInput = {
+  title?: string;
+  message?: string;
+  level?: AIAlertLevel;
+  severity?: AIAlertLevel;
+  action?: string;
+  actorEmail?: string;
+  actorUid?: string;
+  entityId?: string;
+  entityType?: string;
+  targetEmail?: string;
+  targetUid?: string;
+  reason?: string;
+  metadata?: Record<string, unknown> | null;
+};
+
 function normalizeDate(value: unknown): Date | string | number | null {
   if (!value) return null;
   if (value instanceof Date) return value;
@@ -59,7 +77,9 @@ function normalizeLevel(value: unknown): AIAlertLevel {
     value === "low" ||
     value === "medium" ||
     value === "high" ||
-    value === "critical"
+    value === "critical" ||
+    value === "warning" ||
+    value === "info"
   ) {
     return value;
   }
@@ -80,19 +100,45 @@ function normalizeLimit(input?: ListAIAlertsInput): number {
 export function getAIAlertLevelLabel(level: AIAlertLevel) {
   if (level === "critical") return "Critical";
   if (level === "high") return "High";
+  if (level === "warning") return "Warning";
+  if (level === "info") return "Info";
   if (level === "medium") return "Medium";
   return "Low";
 }
 
 export function getAIAlertTone(level: AIAlertLevel) {
   if (level === "critical") return "danger";
-  if (level === "high") return "warning";
-  if (level === "medium") return "info";
+  if (level === "high" || level === "warning") return "warning";
+  if (level === "medium" || level === "info") return "info";
   return "neutral";
 }
 
 export function buildAIAlerts(): AIAlert[] {
   return [];
+}
+
+export async function createAIAlert(input: CreateAIAlertInput) {
+  const level = normalizeLevel(input.level ?? input.severity);
+
+  const ref = await addDoc(collection(db, "aiAuditLogs"), {
+    title: input.title ?? "AI Alert",
+    message: input.message ?? input.reason ?? "AI alert created.",
+    level,
+    severity: level,
+    action: input.action ?? "ai_alert",
+    actorEmail: input.actorEmail ?? "",
+    actorUid: input.actorUid ?? "",
+    entityId: input.entityId ?? "",
+    entityType: input.entityType ?? "",
+    targetEmail: input.targetEmail ?? "",
+    targetUid: input.targetUid ?? "",
+    reason: input.reason ?? "",
+    metadata: input.metadata ?? null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  return ref.id;
 }
 
 export async function listAIAlerts(
