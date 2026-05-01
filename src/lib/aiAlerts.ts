@@ -10,7 +10,7 @@ import { db } from "@/lib/firebase";
 
 export type AIAlertLevel = "low" | "medium" | "high" | "critical";
 
-export type AIAlert = {
+export interface AIAlert {
   id: string;
   title: string;
   message: string;
