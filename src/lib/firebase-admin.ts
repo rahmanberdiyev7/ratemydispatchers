@@ -3,7 +3,6 @@ import admin from "firebase-admin";
 function getPrivateKey() {
   const key = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
   if (!key) return undefined;
-
   return key.replace(/\\n/g, "\n");
 }
 
