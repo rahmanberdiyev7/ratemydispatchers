@@ -39,6 +39,20 @@ const ACCOUNT_TYPES: Array<{
   },
 ];
 
+function accountLabel(accountType: AccountType, driverSubtype: DriverSubtype) {
+  if (accountType === "dispatcher") return "Dispatcher";
+  if (accountType === "carrier") return "Carrier";
+  if (accountType === "broker") return "Broker";
+
+  if (accountType === "driver") {
+    if (driverSubtype === "owner_operator") return "Driver — Owner Operator";
+    if (driverSubtype === "company_driver") return "Driver — Company Driver";
+    return "Driver";
+  }
+
+  return "Not selected";
+}
+
 async function getRedirectPath(uid: string) {
   const snap = await getDoc(doc(db, "users", uid));
 
@@ -66,6 +80,12 @@ export default function LoginPage() {
 
   const [accountType, setAccountType] = useState<AccountType>(null);
   const [driverSubtype, setDriverSubtype] = useState<DriverSubtype>(null);
+
+  const signupReady =
+    mode === "login" ||
+    (!!displayName.trim() &&
+      !!accountType &&
+      (accountType !== "driver" || !!driverSubtype));
 
   useEffect(() => {
     if (initialUser) {
@@ -196,7 +216,10 @@ export default function LoginPage() {
             : "Access your RateMyDispatchers account."}
         </div>
 
-        <form onSubmit={handleAuth} style={{ display: "grid", gap: 12, marginTop: 18 }}>
+        <form
+          onSubmit={handleAuth}
+          style={{ display: "grid", gap: 12, marginTop: 18 }}
+        >
           {mode === "signup" ? (
             <input
               className="input"
@@ -253,9 +276,17 @@ export default function LoginPage() {
                         gap: 4,
                         padding: 14,
                         height: "auto",
+                        border: active
+                          ? "2px solid rgba(77, 163, 255, 0.95)"
+                          : "1px solid rgba(255,255,255,0.12)",
+                        background: active
+                          ? "rgba(77, 163, 255, 0.18)"
+                          : undefined,
+                        transform: active ? "scale(1.02)" : "scale(1)",
                       }}
                       onClick={() => {
                         setAccountType(item.value);
+
                         if (item.value !== "driver") {
                           setDriverSubtype(null);
                         }
@@ -273,6 +304,9 @@ export default function LoginPage() {
               {accountType === "driver" ? (
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontWeight: 900 }}>Driver type</div>
+                  <div className="small" style={{ marginTop: 4, opacity: 0.82 }}>
+                    Choose whether you are an owner-operator or company driver.
+                  </div>
 
                   <div className="row wrap" style={{ gap: 10, marginTop: 10 }}>
                     <button
@@ -282,13 +316,15 @@ export default function LoginPage() {
                       }
                       onClick={() => setDriverSubtype("owner_operator")}
                     >
-                      Owner-Operator
+                      Owner Operator
                     </button>
 
                     <button
                       type="button"
                       className={
-                        driverSubtype === "company_driver" ? "btn" : "btn secondary"
+                        driverSubtype === "company_driver"
+                          ? "btn"
+                          : "btn secondary"
                       }
                       onClick={() => setDriverSubtype("company_driver")}
                     >
@@ -297,10 +333,14 @@ export default function LoginPage() {
                   </div>
                 </div>
               ) : null}
+
+              <div className="small" style={{ marginTop: 14, opacity: 0.9 }}>
+                Selected: <b>{accountLabel(accountType, driverSubtype)}</b>
+              </div>
             </div>
           ) : null}
 
-          <button className="btn" type="submit" disabled={busy}>
+          <button className="btn" type="submit" disabled={busy || !signupReady}>
             {busy
               ? "Please wait..."
               : mode === "signup"
