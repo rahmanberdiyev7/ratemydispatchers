@@ -3,8 +3,10 @@ import type { AccountType, DriverSubtype, UserProfile } from "@/lib/userProfiles
 export type RoleAction =
   | "review_dispatcher"
   | "review_broker"
+  | "review_driver"
   | "report_dispatcher"
   | "report_broker"
+  | "report_driver"
   | "create_marketplace_listing"
   | "manage_own_profile"
   | "access_admin"
@@ -81,6 +83,16 @@ export function canReviewBroker(profile: UserProfile | null | undefined) {
   );
 }
 
+export function canReviewDriver(profile: UserProfile | null | undefined) {
+  if (!profile?.accountType) return false;
+
+  return (
+    isAdminProfile(profile) ||
+    profile.accountType === "dispatcher" ||
+    profile.accountType === "carrier"
+  );
+}
+
 export function canReportDispatcher(profile: UserProfile | null | undefined) {
   if (!profile?.accountType) return false;
 
@@ -98,6 +110,17 @@ export function canReportBroker(profile: UserProfile | null | undefined) {
     isAdminProfile(profile) ||
     profile.accountType === "carrier" ||
     profile.accountType === "driver"
+  );
+}
+
+export function canReportDriver(profile: UserProfile | null | undefined) {
+  if (!profile?.accountType) return false;
+
+  return (
+    isAdminProfile(profile) ||
+    profile.accountType === "dispatcher" ||
+    profile.accountType === "carrier" ||
+    profile.accountType === "broker"
   );
 }
 
@@ -131,11 +154,16 @@ export function canPerformAction(
 ) {
   if (action === "review_dispatcher") return canReviewDispatcher(profile);
   if (action === "review_broker") return canReviewBroker(profile);
+  if (action === "review_driver") return canReviewDriver(profile);
+
   if (action === "report_dispatcher") return canReportDispatcher(profile);
   if (action === "report_broker") return canReportBroker(profile);
+  if (action === "report_driver") return canReportDriver(profile);
+
   if (action === "create_marketplace_listing") {
     return canCreateMarketplaceListing(profile);
   }
+
   if (action === "manage_own_profile") return canManageOwnProfile(profile);
   if (action === "access_admin") return canAccessAdmin(profile);
   if (action === "access_ai_flags") return canAccessAIFlags(profile);
@@ -152,12 +180,20 @@ export function getRoleRestrictionMessage(action: RoleAction) {
     return "Only carriers, drivers, owner-operators, and admins can review brokers.";
   }
 
+  if (action === "review_driver") {
+    return "Only dispatchers, carriers, and admins can review drivers.";
+  }
+
   if (action === "report_dispatcher") {
     return "Only carriers, drivers, owner-operators, and admins can report dispatchers.";
   }
 
   if (action === "report_broker") {
     return "Only carriers, drivers, owner-operators, and admins can report brokers.";
+  }
+
+  if (action === "report_driver") {
+    return "Only dispatchers, carriers, brokers, and admins can report drivers.";
   }
 
   if (action === "create_marketplace_listing") {
