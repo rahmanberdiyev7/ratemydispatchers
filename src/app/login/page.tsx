@@ -53,6 +53,26 @@ function accountLabel(accountType: AccountType, driverSubtype: DriverSubtype) {
   return "Not selected";
 }
 
+function friendlyAuthError(codeOrMessage: string) {
+  if (codeOrMessage.includes("auth/email-already-in-use")) {
+    return "This email already has an account. Please login instead.";
+  }
+
+  if (codeOrMessage.includes("auth/invalid-credential")) {
+    return "Invalid email or password.";
+  }
+
+  if (codeOrMessage.includes("auth/weak-password")) {
+    return "Password should be at least 6 characters.";
+  }
+
+  if (codeOrMessage.includes("auth/invalid-email")) {
+    return "Please enter a valid email address.";
+  }
+
+  return codeOrMessage || "Authentication failed.";
+}
+
 async function getRedirectPath(uid: string) {
   const snap = await getDoc(doc(db, "users", uid));
 
@@ -78,6 +98,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [accountType, setAccountType] = useState<AccountType>(null);
   const [driverSubtype, setDriverSubtype] = useState<DriverSubtype>(null);
 
@@ -85,6 +108,9 @@ export default function LoginPage() {
     mode === "login" ||
     (!!displayName.trim() &&
       !!accountType &&
+      !!password.trim() &&
+      !!confirmPassword.trim() &&
+      password === confirmPassword &&
       (accountType !== "driver" || !!driverSubtype));
 
   useEffect(() => {
@@ -121,6 +147,11 @@ export default function LoginPage() {
     if (mode === "signup") {
       if (!displayName.trim()) {
         alert("Display name is required.");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alert("Passwords do not match.");
         return;
       }
 
@@ -189,7 +220,7 @@ export default function LoginPage() {
       router.push(path);
     } catch (error: any) {
       console.error(error);
-      alert(error?.message ?? "Authentication failed.");
+      alert(friendlyAuthError(error?.code || error?.message));
     } finally {
       setBusy(false);
     }
@@ -237,13 +268,33 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <input
-            className="input"
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div style={{ display: "grid", gap: 8 }}>
+            <input
+              className="input"
+              placeholder="Password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            {mode === "signup" ? (
+              <input
+                className="input"
+                placeholder="Confirm password"
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            ) : null}
+
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={() => setShowPassword((v) => !v)}
+            >
+              {showPassword ? "Hide Password" : "Show Password"}
+            </button>
+          </div>
 
           {mode === "signup" ? (
             <div className="card" style={{ padding: 14 }}>
@@ -356,6 +407,7 @@ export default function LoginPage() {
               setMode(mode === "signup" ? "login" : "signup");
               setAccountType(null);
               setDriverSubtype(null);
+              setConfirmPassword("");
             }}
           >
             {mode === "signup"
