@@ -9,21 +9,21 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard" },
 
   { label: "Dispatchers", href: "/dispatchers" },
-  { label: "Leaderboard", href: "/leaderboard" },
-
   { label: "Brokers", href: "/brokers" },
-  { label: "Broker Leaderboard", href: "/brokers/leaderboard" },
-
   { label: "Drivers", href: "/drivers" },
+
+  { label: "DispatchGuard", href: "/watchlist" },
   { label: "Driver Watchlist", href: "/driver-watchlist" },
 
-  { label: "Trust & Risk Watchlist", href: "/watchlist" },
+  { label: "Leaderboard", href: "/leaderboard" },
+  { label: "Broker Leaderboard", href: "/brokers/leaderboard" },
 
   { label: "Marketplace", href: "/marketplace" },
   { label: "My Leads", href: "/my-leads" },
   { label: "My Favorites", href: "/my-favorites" },
+
   { label: "Notifications", href: "/notifications" },
-  { label: "Profile", href: "/profile" },
+  { label: "My Profile", href: "/profile" },
 ];
 
 export default function Sidebar() {
@@ -36,18 +36,18 @@ export default function Sidebar() {
         <div className="brand-kicker">DISPATCHHUB ECOSYSTEM</div>
         <div className="brand-title">RateMyDispatchers</div>
         <p className="brand-subtitle">
-          Reviews, rankings, leads, favorites, marketplace trust signals, and
-          risk monitoring — all in one place.
+          Reviews, reputation, leads, marketplace, and DispatchGuard scam-risk
+          monitoring for dispatchers, brokers, and drivers.
         </p>
       </div>
 
       <div className="sidebar-actions">
-        <Link className="btn" href="/dispatchers">
-          Dispatchers
+        <Link className="btn" href="/watchlist">
+          DispatchGuard
         </Link>
 
-        <Link className="btn secondary" href="/brokers">
-          Brokers
+        <Link className="btn secondary" href="/marketplace">
+          Marketplace
         </Link>
       </div>
 
@@ -95,6 +95,24 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      <div className="sidebar-auth" style={{ marginTop: 14 }}>
+        <div className="small" style={{ marginBottom: 8 }}>
+          Quick actions
+        </div>
+
+        <Link className="btn secondary" href="/marketplace/new">
+          Create Listing
+        </Link>
+
+        <Link
+          className="btn secondary"
+          href="/profile"
+          style={{ marginTop: 8 }}
+        >
+          Update Profile
+        </Link>
+      </div>
     </aside>
   );
 }
