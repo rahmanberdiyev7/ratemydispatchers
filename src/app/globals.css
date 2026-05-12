@@ -835,15 +835,59 @@ textarea.input {
   }
 
   .appAlertCard {
-  border-radius: 20px;
-  padding: 16px;
-}
+    border-radius: 20px;
+    padding: 16px;
+  }
 
-@media (max-width: 700px) {
   .premiumTopCard,
   .premiumShowcase,
   .premiumFeatureCard {
     padding: 16px;
   }
 }
+
+/* Final app shell cleanup */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+.appShell {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 18px;
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
+  overflow-x: hidden;
+}
+
+.mainShell {
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.sidebar {
+  width: 230px;
+  min-width: 230px;
+  max-width: 230px;
+  position: sticky;
+  top: 16px;
+  align-self: start;
+}
+
+@media (max-width: 1100px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: relative;
+    top: 0;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 }

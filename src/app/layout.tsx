@@ -6,7 +6,8 @@ import ThemeProvider from "@/components/ui/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "RateMyDispatchers",
-  description: "Reviews, rankings, leads, favorites, and marketplace trust signals.",
+  description:
+    "DispatchGuard trust intelligence for dispatchers, brokers, drivers, carriers, reviews, reports, leads, and marketplace transparency.",
 };
 
 const themeInitScript = `
