@@ -61,7 +61,7 @@ export default function HomePage() {
             Browse Drivers
           </Link>
 
-          <Link href="/watchlist" className="btn secondary">
+          <Link href="/dispatchguard" className="btn secondary">
             Trust & Risk Watchlist
           </Link>
 

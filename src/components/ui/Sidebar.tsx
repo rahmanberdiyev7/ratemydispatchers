@@ -174,7 +174,7 @@ export default function Sidebar() {
       </div>
 
       <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
-        <Link className="btn" href="/watchlist">
+        <Link className="btn" href="/dispatchguard">
           DispatchGuard
         </Link>
 
