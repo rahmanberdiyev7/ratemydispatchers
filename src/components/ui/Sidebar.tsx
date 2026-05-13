@@ -9,27 +9,29 @@ const mainNavItems = [
   { label: "Dashboard", href: "/dashboard" },
 ];
 
-const reputationItems = [
+const trustNetworkItems = [
   { label: "Dispatchers", href: "/dispatchers" },
   { label: "Brokers", href: "/brokers" },
+  { label: "Carriers", href: "/carriers" },
   { label: "Drivers", href: "/drivers" },
 ];
 
-const guardItems = [
-  { label: "DispatchGuard", href: "/watchlist" },
-  { label: "Driver Watchlist", href: "/driver-watchlist" },
+const dispatchGuardItems = [
+  { label: "DispatchGuard Intelligence", href: "/dispatchguard" },
+  { label: "Identity Shield", href: "/dispatchguard/identity-shield" },
+  { label: "Risk Watchlist", href: "/watchlist" },
 ];
 
-const growthItems = [
-  { label: "Leaderboard", href: "/leaderboard" },
+const marketplaceItems = [
   { label: "Marketplace", href: "/marketplace" },
-  { label: "My Leads", href: "/my-leads" },
+  { label: "Leads", href: "/my-leads" },
+  { label: "Leaderboard", href: "/leaderboard" },
 ];
 
 const accountItems = [
-  { label: "My Favorites", href: "/my-favorites" },
+  { label: "Favorites", href: "/my-favorites" },
   { label: "Notifications", href: "/notifications" },
-  { label: "My Profile", href: "/profile" },
+  { label: "Profile", href: "/profile" },
 ];
 
 function NavLink({
@@ -168,8 +170,8 @@ export default function Sidebar() {
             marginBottom: 0,
           }}
         >
-          Reviews, reputation, leads, marketplace, and DispatchGuard scam-risk
-          monitoring for dispatchers, brokers, and drivers.
+          DispatchGuard trust intelligence for brokers, carriers, dispatchers,
+          and drivers.
         </p>
       </div>
 
@@ -232,9 +234,21 @@ export default function Sidebar() {
       </div>
 
       <Section title="Main" items={mainNavItems} pathname={pathname} />
-      <Section title="Reviews & Reputation" items={reputationItems} pathname={pathname} />
-      <Section title="Risk Intelligence" items={guardItems} pathname={pathname} />
-      <Section title="Growth" items={growthItems} pathname={pathname} />
+      <Section
+        title="Trust Network"
+        items={trustNetworkItems}
+        pathname={pathname}
+      />
+      <Section
+        title="DispatchGuard"
+        items={dispatchGuardItems}
+        pathname={pathname}
+      />
+      <Section
+        title="Marketplace"
+        items={marketplaceItems}
+        pathname={pathname}
+      />
       <Section title="Account" items={accountItems} pathname={pathname} />
 
       <div

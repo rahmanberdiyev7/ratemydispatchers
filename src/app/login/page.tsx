@@ -18,31 +18,35 @@ const ACCOUNT_TYPES: Array<{
   description: string;
 }> = [
   {
-    value: "dispatcher",
-    label: "Dispatcher",
-    description: "Build reputation, get reviewed, and manage trust profile.",
+    value: "broker",
+    label: "Broker",
+    description:
+      "Protect your identity, monitor impersonation alerts, and build verified trust.",
   },
   {
     value: "carrier",
     label: "Carrier",
-    description: "Review dispatchers and brokers before working with them.",
+    description:
+      "Check brokers, dispatchers, and drivers before booking, hiring, or trusting.",
   },
   {
-    value: "broker",
-    label: "Broker",
-    description: "Monitor your broker trust profile and public visibility.",
+    value: "dispatcher",
+    label: "Dispatcher",
+    description:
+      "Build reputation, get reviewed, and prove operational trustworthiness.",
   },
   {
     value: "driver",
     label: "Driver",
-    description: "Find trusted dispatchers and avoid risky relationships.",
+    description:
+      "Create your driver profile as an owner-operator or company driver.",
   },
 ];
 
 function accountLabel(accountType: AccountType, driverSubtype: DriverSubtype) {
-  if (accountType === "dispatcher") return "Dispatcher";
-  if (accountType === "carrier") return "Carrier";
   if (accountType === "broker") return "Broker";
+  if (accountType === "carrier") return "Carrier";
+  if (accountType === "dispatcher") return "Dispatcher";
 
   if (accountType === "driver") {
     if (driverSubtype === "owner_operator") return "Driver — Owner Operator";
@@ -200,6 +204,10 @@ export default function LoginPage() {
             aiRiskScore: 0,
             aiSignals: [],
 
+            dispatchGuardScore: 85,
+            dispatchGuardLevel: "verified",
+            dispatchGuardFlagged: false,
+
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           },
@@ -235,7 +243,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: 760, margin: "40px auto" }}>
+    <div className="container" style={{ maxWidth: 820, margin: "40px auto" }}>
       <div className="card" style={{ padding: 24 }}>
         <h1 className="h1" style={{ marginBottom: 8 }}>
           {mode === "signup" ? "Create your account" : "Login"}
@@ -243,8 +251,8 @@ export default function LoginPage() {
 
         <div className="small" style={{ opacity: 0.88 }}>
           {mode === "signup"
-            ? "Choose your account type so RateMyDispatchers can personalize your dashboard."
-            : "Access your RateMyDispatchers account."}
+            ? "Choose your user type so DispatchGuard can personalize your trust, reputation, and risk experience."
+            : "Access your RateMyDispatchers / DispatchGuard account."}
         </div>
 
         <form
@@ -298,9 +306,10 @@ export default function LoginPage() {
 
           {mode === "signup" ? (
             <div className="card" style={{ padding: 14 }}>
-              <div style={{ fontWeight: 900 }}>Choose account type</div>
+              <div style={{ fontWeight: 900 }}>Choose your user type</div>
               <div className="small" style={{ marginTop: 4, opacity: 0.82 }}>
-                You can change this later from your profile.
+                Brokers, carriers, dispatchers, and drivers each get their own
+                trust experience.
               </div>
 
               <div
@@ -363,7 +372,9 @@ export default function LoginPage() {
                     <button
                       type="button"
                       className={
-                        driverSubtype === "owner_operator" ? "btn" : "btn secondary"
+                        driverSubtype === "owner_operator"
+                          ? "btn"
+                          : "btn secondary"
                       }
                       onClick={() => setDriverSubtype("owner_operator")}
                     >
