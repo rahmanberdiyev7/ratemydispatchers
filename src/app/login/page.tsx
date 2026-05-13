@@ -74,6 +74,10 @@ function friendlyAuthError(codeOrMessage: string) {
     return "Please enter a valid email address.";
   }
 
+  if (codeOrMessage.includes("permission-denied")) {
+    return "Firebase blocked this action. Check Firestore rules for users and trust_entities.";
+  }
+
   return codeOrMessage || "Authentication failed.";
 }
 
@@ -135,6 +139,102 @@ export default function LoginPage() {
     return () => unsub();
   }, [initialUser, router]);
 
+  async function createUserAndTrustEntity(input: {
+    uid: string;
+    userEmail: string | null;
+    userDisplayName: string;
+    selectedAccountType: Exclude<AccountType, null>;
+    selectedDriverSubtype: DriverSubtype;
+  }) {
+    const baseDispatchGuard = {
+      score: 85,
+      level: "verified",
+      reportsCount: 0,
+      reviewCount: 0,
+      riskSignals: 0,
+    };
+
+    await setDoc(
+      doc(db, "users", input.uid),
+      {
+        uid: input.uid,
+        email: input.userEmail,
+        displayName: input.userDisplayName,
+
+        platformRole: "user",
+        accountType: input.selectedAccountType,
+        driverSubtype:
+          input.selectedAccountType === "driver"
+            ? input.selectedDriverSubtype
+            : null,
+
+        verificationStatus: "unverified",
+        tier: "tier1",
+
+        aiFlagged: false,
+        aiOverride: false,
+        aiRiskLevel: "low",
+        aiRiskScore: 0,
+        aiSignals: [],
+
+        trustEntityId: input.uid,
+
+        dispatchGuardScore: 85,
+        dispatchGuardLevel: "verified",
+        dispatchGuardFlagged: false,
+
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    await setDoc(
+      doc(db, "trust_entities", input.uid),
+      {
+        uid: input.uid,
+
+        type: input.selectedAccountType,
+        displayName: input.userDisplayName,
+
+        companyName: "",
+        mcNumber: "",
+        dotNumber: "",
+        phone: "",
+        email: input.userEmail ?? "",
+
+        driverSubtype:
+          input.selectedAccountType === "driver"
+            ? input.selectedDriverSubtype
+            : null,
+
+        verified: false,
+        verificationStatus: "unverified",
+
+        dispatchGuard: baseDispatchGuard,
+
+        dispatchGuardScore: 85,
+        dispatchGuardLevel: "verified",
+        dispatchGuardFlagged: false,
+
+        identityShield: {
+          activeAlerts: 0,
+          confirmedImpersonations: 0,
+          fakePhones: [],
+          fakeEmails: [],
+          fakeDomains: [],
+        },
+
+        profileImageUrl: "",
+        companyLogoUrl: "",
+
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+
   async function handleAuth(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -184,35 +284,13 @@ export default function LoginPage() {
           displayName: displayName.trim(),
         });
 
-        await setDoc(
-          doc(db, "users", credential.user.uid),
-          {
-            uid: credential.user.uid,
-            email: credential.user.email,
-            displayName: displayName.trim(),
-
-            platformRole: "user",
-            accountType,
-            driverSubtype: accountType === "driver" ? driverSubtype : null,
-
-            verificationStatus: "unverified",
-            tier: "tier1",
-
-            aiFlagged: false,
-            aiOverride: false,
-            aiRiskLevel: "low",
-            aiRiskScore: 0,
-            aiSignals: [],
-
-            dispatchGuardScore: 85,
-            dispatchGuardLevel: "verified",
-            dispatchGuardFlagged: false,
-
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        await createUserAndTrustEntity({
+          uid: credential.user.uid,
+          userEmail: credential.user.email,
+          userDisplayName: displayName.trim(),
+          selectedAccountType: accountType as Exclude<AccountType, null>,
+          selectedDriverSubtype: driverSubtype,
+        });
 
         router.push("/dashboard");
         return;
