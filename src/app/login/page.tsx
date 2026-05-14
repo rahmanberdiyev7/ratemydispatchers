@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
@@ -66,6 +67,10 @@ function friendlyAuthError(codeOrMessage: string) {
     return "Invalid email or password.";
   }
 
+  if (codeOrMessage.includes("auth/user-not-found")) {
+    return "No account found with this email.";
+  }
+
   if (codeOrMessage.includes("auth/weak-password")) {
     return "Password should be at least 6 characters.";
   }
@@ -99,8 +104,9 @@ export default function LoginPage() {
   const initialUser = useMemo(() => getCurrentUser(), []);
   const [authReady, setAuthReady] = useState(false);
 
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
 
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -113,7 +119,7 @@ export default function LoginPage() {
   const [driverSubtype, setDriverSubtype] = useState<DriverSubtype>(null);
 
   const signupReady =
-    mode === "login" ||
+    mode !== "signup" ||
     (!!displayName.trim() &&
       !!accountType &&
       !!password.trim() &&
@@ -235,8 +241,33 @@ export default function LoginPage() {
     );
   }
 
+  async function handlePasswordReset() {
+    if (!email.trim()) {
+      alert("Enter your email first.");
+      return;
+    }
+
+    setBusy(true);
+    setNotice("");
+
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setNotice("Password reset email sent. Check your inbox.");
+    } catch (error: any) {
+      console.error(error);
+      alert(friendlyAuthError(error?.code || error?.message));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleAuth(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (mode === "reset") {
+      await handlePasswordReset();
+      return;
+    }
 
     if (!email.trim()) {
       alert("Email is required.");
@@ -271,6 +302,7 @@ export default function LoginPage() {
     }
 
     setBusy(true);
+    setNotice("");
 
     try {
       if (mode === "signup") {
@@ -324,12 +356,18 @@ export default function LoginPage() {
     <div className="container" style={{ maxWidth: 820, margin: "40px auto" }}>
       <div className="card" style={{ padding: 24 }}>
         <h1 className="h1" style={{ marginBottom: 8 }}>
-          {mode === "signup" ? "Create your account" : "Login"}
+          {mode === "signup"
+            ? "Create your account"
+            : mode === "reset"
+            ? "Reset password"
+            : "Login"}
         </h1>
 
         <div className="small" style={{ opacity: 0.88 }}>
           {mode === "signup"
             ? "Choose your user type so DispatchGuard can personalize your trust, reputation, and risk experience."
+            : mode === "reset"
+            ? "Enter your email and we’ll send you a Firebase password reset link."
             : "Access your RateMyDispatchers / DispatchGuard account."}
         </div>
 
@@ -354,33 +392,35 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <div style={{ display: "grid", gap: 8 }}>
-            <input
-              className="input"
-              placeholder="Password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-
-            {mode === "signup" ? (
+          {mode !== "reset" ? (
+            <div style={{ display: "grid", gap: 8 }}>
               <input
                 className="input"
-                placeholder="Confirm password"
+                placeholder="Password"
                 type={showPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
-            ) : null}
 
-            <button
-              type="button"
-              className="btn secondary"
-              onClick={() => setShowPassword((v) => !v)}
-            >
-              {showPassword ? "Hide Password" : "Show Password"}
-            </button>
-          </div>
+              {mode === "signup" ? (
+                <input
+                  className="input"
+                  placeholder="Confirm password"
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              ) : null}
+
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                {showPassword ? "Hide Password" : "Show Password"}
+              </button>
+            </div>
+          ) : null}
 
           {mode === "signup" ? (
             <div className="card" style={{ padding: 14 }}>
@@ -480,19 +520,39 @@ export default function LoginPage() {
             </div>
           ) : null}
 
+          {notice ? (
+            <div className="card" style={{ padding: 14 }}>
+              {notice}
+            </div>
+          ) : null}
+
           <button className="btn" type="submit" disabled={busy || !signupReady}>
             {busy
               ? "Please wait..."
               : mode === "signup"
               ? "Create Account"
+              : mode === "reset"
+              ? "Send Reset Email"
               : "Login"}
           </button>
+
+          {mode === "login" ? (
+            <button
+              className="btn secondary"
+              type="button"
+              disabled={busy}
+              onClick={() => setMode("reset")}
+            >
+              Forgot password?
+            </button>
+          ) : null}
 
           <button
             className="btn secondary"
             type="button"
             disabled={busy}
             onClick={() => {
+              setNotice("");
               setMode(mode === "signup" ? "login" : "signup");
               setAccountType(null);
               setDriverSubtype(null);
@@ -501,6 +561,8 @@ export default function LoginPage() {
           >
             {mode === "signup"
               ? "Already have an account? Login"
+              : mode === "reset"
+              ? "Back to Login"
               : "New here? Create account"}
           </button>
         </form>
