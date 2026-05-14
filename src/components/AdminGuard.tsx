@@ -17,7 +17,7 @@ export default function AdminGuard({ children }: Props) {
   async function check(uid: string) {
     const adminUser = await getAdminUser(uid);
     setEmail(adminUser?.email ?? null);
-    setAllowed(isAdminRole(adminUser?.platformRole));
+    setAllowed(isAdminRole(adminUser?.platformRole, adminUser?.email));
     setLoading(false);
   }
 

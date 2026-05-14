@@ -10,12 +10,32 @@ export type AdminUser = {
   platformRole?: string | null;
 };
 
-export function isAdminRole(role?: string | null) {
-  return role === "super_admin" || role === "admin" || role === "moderator";
+const SUPER_ADMIN_EMAILS = ["rahmanberdiyev7@gmail.com"];
+
+function clean(value?: string | null) {
+  return String(value ?? "").trim().toLowerCase();
 }
 
-export function isSuperAdminRole(role?: string | null) {
-  return role === "super_admin";
+export function isAdminRole(role?: string | null, email?: string | null) {
+  const normalizedRole = clean(role);
+  const normalizedEmail = clean(email);
+
+  if (SUPER_ADMIN_EMAILS.includes(normalizedEmail)) return true;
+
+  return (
+    normalizedRole === "super_admin" ||
+    normalizedRole === "admin" ||
+    normalizedRole === "moderator"
+  );
+}
+
+export function isSuperAdminRole(role?: string | null, email?: string | null) {
+  const normalizedRole = clean(role);
+  const normalizedEmail = clean(email);
+
+  if (SUPER_ADMIN_EMAILS.includes(normalizedEmail)) return true;
+
+  return normalizedRole === "super_admin";
 }
 
 export async function getAdminUser(uid: string): Promise<AdminUser | null> {
