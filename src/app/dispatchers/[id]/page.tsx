@@ -317,7 +317,7 @@ export default function DispatcherProfilePage() {
               <span className="badge">{liveReviewCount} reviews</span>
 
               {dispatcher.verified ? (
-                <VerifiedBadge variant="verified" compact />
+                <VerifiedBadge />
               ) : (
                 <span className="badge">Unverified</span>
               )}
