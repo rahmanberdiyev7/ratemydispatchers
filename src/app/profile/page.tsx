@@ -8,6 +8,11 @@ import { auth, db } from "@/lib/firebase";
 import { getCurrentUser, listenToAuth } from "@/lib/auth";
 import type { AccountType, DriverSubtype } from "@/lib/userProfiles";
 import DispatchGuardBadge from "@/components/DispatchGuardBadge";
+import {
+  createAccountTypeChangeRequest,
+  listMyAccountTypeChangeRequests,
+  type AccountTypeChangeRequest,
+} from "@/lib/accountTypeChangeRequests";
 
 const ACCOUNT_TYPES: Array<{
   value: Exclude<AccountType, null>;
@@ -46,6 +51,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>(null);
   const [driverSubtype, setDriverSubtype] = useState<DriverSubtype>(null);
+  const [accountTypeLocked, setAccountTypeLocked] = useState(false);
 
   const [companyName, setCompanyName] = useState("");
   const [mcNumber, setMcNumber] = useState("");
@@ -62,6 +68,16 @@ export default function ProfilePage() {
   const [dispatchGuardScore, setDispatchGuardScore] = useState(85);
   const [dispatchGuardLevel, setDispatchGuardLevel] = useState("verified");
 
+  const [showChangeRequest, setShowChangeRequest] = useState(false);
+  const [requestedAccountType, setRequestedAccountType] =
+    useState<AccountType>(null);
+  const [requestedDriverSubtype, setRequestedDriverSubtype] =
+    useState<DriverSubtype>(null);
+  const [changeReason, setChangeReason] = useState("");
+  const [changeRequests, setChangeRequests] = useState<
+    AccountTypeChangeRequest[]
+  >([]);
+
   useEffect(() => {
     async function loadUser(user: NonNullable<ReturnType<typeof getCurrentUser>>) {
       setUid(user.uid);
@@ -74,17 +90,28 @@ export default function ProfilePage() {
       const userData = userSnap.exists() ? userSnap.data() : {};
       const entityData = entitySnap.exists() ? entitySnap.data() : {};
 
+      const loadedAccountType = (userData.accountType ??
+        entityData.type ??
+        null) as AccountType;
+
       setDisplayName(
-        String(userData.displayName ?? entityData.displayName ?? user.displayName ?? "")
+        String(
+          userData.displayName ??
+            entityData.displayName ??
+            user.displayName ??
+            ""
+        )
       );
 
-      setAccountType(
-        (userData.accountType ?? entityData.type ?? null) as AccountType
-      );
+      setAccountType(loadedAccountType);
 
       setDriverSubtype(
-        (userData.driverSubtype ?? entityData.driverSubtype ?? null) as DriverSubtype
+        (userData.driverSubtype ??
+          entityData.driverSubtype ??
+          null) as DriverSubtype
       );
+
+      setAccountTypeLocked(Boolean(userData.accountTypeLocked ?? !!loadedAccountType));
 
       setCompanyName(String(entityData.companyName ?? userData.companyName ?? ""));
       setMcNumber(String(entityData.mcNumber ?? userData.mcNumber ?? ""));
@@ -101,7 +128,11 @@ export default function ProfilePage() {
 
       setPlatformRole(String(userData.platformRole ?? "user"));
       setVerificationStatus(
-        String(userData.verificationStatus ?? entityData.verificationStatus ?? "unverified")
+        String(
+          userData.verificationStatus ??
+            entityData.verificationStatus ??
+            "unverified"
+        )
       );
       setTier(String(userData.tier ?? "tier1"));
 
@@ -110,12 +141,29 @@ export default function ProfilePage() {
         | undefined;
 
       setDispatchGuardScore(
-        Number(dg?.score ?? entityData.dispatchGuardScore ?? userData.dispatchGuardScore ?? 85)
+        Number(
+          dg?.score ??
+            entityData.dispatchGuardScore ??
+            userData.dispatchGuardScore ??
+            85
+        )
       );
 
       setDispatchGuardLevel(
-        String(dg?.level ?? entityData.dispatchGuardLevel ?? userData.dispatchGuardLevel ?? "verified")
+        String(
+          dg?.level ??
+            entityData.dispatchGuardLevel ??
+            userData.dispatchGuardLevel ??
+            "verified"
+        )
       );
+
+      try {
+        const requests = await listMyAccountTypeChangeRequests(user.uid);
+        setChangeRequests(requests);
+      } catch (error) {
+        console.error("Failed to load account type change requests", error);
+      }
 
       setLoading(false);
     }
@@ -188,6 +236,7 @@ export default function ProfilePage() {
           displayName: displayName.trim(),
 
           accountType: normalizedAccountType,
+          accountTypeLocked: true,
           driverSubtype: normalizedDriverSubtype,
 
           companyName: companyName.trim(),
@@ -260,10 +309,66 @@ export default function ProfilePage() {
         { merge: true }
       );
 
-      alert("Profile saved successfully.");
+      setAccountTypeLocked(true);
+      alert("Profile saved successfully. Account type is now locked.");
     } catch (error: any) {
       console.error(error);
       alert(error?.message ?? "Failed to save profile.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitAccountTypeChangeRequest() {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login first.");
+      return;
+    }
+
+    if (!requestedAccountType) {
+      alert("Choose requested account type.");
+      return;
+    }
+
+    if (requestedAccountType === "driver" && !requestedDriverSubtype) {
+      alert("Choose requested driver type.");
+      return;
+    }
+
+    if (!changeReason.trim()) {
+      alert("Please explain why you need to change account type.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await createAccountTypeChangeRequest({
+        userId: user.uid,
+        userEmail: user.email,
+        displayName,
+        currentAccountType: accountType,
+        currentDriverSubtype: driverSubtype,
+        requestedAccountType,
+        requestedDriverSubtype:
+          requestedAccountType === "driver" ? requestedDriverSubtype : null,
+        reason: changeReason.trim(),
+      });
+
+      const requests = await listMyAccountTypeChangeRequests(user.uid);
+      setChangeRequests(requests);
+
+      setShowChangeRequest(false);
+      setRequestedAccountType(null);
+      setRequestedDriverSubtype(null);
+      setChangeReason("");
+
+      alert("Account type change request submitted for admin review.");
+    } catch (error: any) {
+      console.error(error);
+      alert(error?.message ?? "Failed to submit request.");
     } finally {
       setSaving(false);
     }
@@ -279,6 +384,10 @@ export default function ProfilePage() {
     );
   }
 
+  const hasPendingRequest = changeRequests.some(
+    (request) => request.status === "pending"
+  );
+
   return (
     <div className="container">
       <div className="card" style={{ padding: 24 }}>
@@ -292,7 +401,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <DispatchGuardBadge level={dispatchGuardLevel} score={dispatchGuardScore} />
+          <DispatchGuardBadge
+            level={dispatchGuardLevel}
+            score={dispatchGuardScore}
+          />
         </div>
 
         <div className="row wrap" style={{ gap: 8, marginTop: 16 }}>
@@ -303,60 +415,174 @@ export default function ProfilePage() {
           <span className="badge">
             Type: {labelAccountType(accountType, driverSubtype)}
           </span>
+          <span className="badge">
+            Account Type: {accountTypeLocked ? "Locked" : "Not locked yet"}
+          </span>
         </div>
       </div>
 
       <div className="card" style={{ padding: 24, marginTop: 18 }}>
         <h2 className="h2">Account Type</h2>
 
-        <div className="small" style={{ marginTop: 8 }}>
-          Choose the user type that best represents this account.
-        </div>
+        {accountTypeLocked ? (
+          <>
+            <div className="small" style={{ marginTop: 8, lineHeight: 1.7 }}>
+              Your account type is locked as{" "}
+              <b>{labelAccountType(accountType, driverSubtype)}</b>. Account
+              type changes require admin approval because verification,
+              DispatchGuard Score™, permissions, and trust history depend on
+              account type.
+            </div>
 
-        <div className="row wrap" style={{ gap: 10, marginTop: 16 }}>
-          {ACCOUNT_TYPES.map((item) => (
-            <button
-              key={item.value}
-              className={accountType === item.value ? "btn" : "btn secondary"}
-              type="button"
-              onClick={() => {
-                setAccountType(item.value);
-
-                if (item.value !== "driver") {
-                  setDriverSubtype(null);
-                }
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {accountType === "driver" ? (
-          <div style={{ marginTop: 18 }}>
-            <div style={{ fontWeight: 900 }}>Driver type</div>
-
-            <div className="row wrap" style={{ gap: 10, marginTop: 10 }}>
-              <button
-                className={
-                  driverSubtype === "owner_operator" ? "btn" : "btn secondary"
-                }
-                type="button"
-                onClick={() => setDriverSubtype("owner_operator")}
-              >
-                Owner Operator
-              </button>
+            <div className="row wrap" style={{ gap: 10, marginTop: 16 }}>
+              <span className="badge">
+                Current: {labelAccountType(accountType, driverSubtype)}
+              </span>
 
               <button
-                className={
-                  driverSubtype === "company_driver" ? "btn" : "btn secondary"
-                }
+                className="btn secondary"
                 type="button"
-                onClick={() => setDriverSubtype("company_driver")}
+                disabled={hasPendingRequest}
+                onClick={() => setShowChangeRequest((value) => !value)}
               >
-                Company Driver
+                {hasPendingRequest
+                  ? "Change Request Pending"
+                  : "Request Account Type Change"}
               </button>
             </div>
+          </>
+        ) : (
+          <>
+            <div className="small" style={{ marginTop: 8 }}>
+              Choose carefully. Once saved, your account type will be locked and
+              changes will require admin approval.
+            </div>
+
+            <div className="row wrap" style={{ gap: 10, marginTop: 16 }}>
+              {ACCOUNT_TYPES.map((item) => (
+                <button
+                  key={item.value}
+                  className={
+                    accountType === item.value ? "btn" : "btn secondary"
+                  }
+                  type="button"
+                  onClick={() => {
+                    setAccountType(item.value);
+
+                    if (item.value !== "driver") {
+                      setDriverSubtype(null);
+                    }
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {accountType === "driver" ? (
+              <div style={{ marginTop: 18 }}>
+                <div style={{ fontWeight: 900 }}>Driver type</div>
+
+                <div className="row wrap" style={{ gap: 10, marginTop: 10 }}>
+                  <button
+                    className={
+                      driverSubtype === "owner_operator"
+                        ? "btn"
+                        : "btn secondary"
+                    }
+                    type="button"
+                    onClick={() => setDriverSubtype("owner_operator")}
+                  >
+                    Owner Operator
+                  </button>
+
+                  <button
+                    className={
+                      driverSubtype === "company_driver"
+                        ? "btn"
+                        : "btn secondary"
+                    }
+                    type="button"
+                    onClick={() => setDriverSubtype("company_driver")}
+                  >
+                    Company Driver
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
+
+        {showChangeRequest ? (
+          <div className="card" style={{ padding: 18, marginTop: 18 }}>
+            <h3 style={{ marginTop: 0 }}>Request Account Type Change</h3>
+
+            <div style={{ display: "grid", gap: 12 }}>
+              <select
+                className="input"
+                value={requestedAccountType ?? ""}
+                onChange={(e) => {
+                  setRequestedAccountType(e.target.value as AccountType);
+                  setRequestedDriverSubtype(null);
+                }}
+              >
+                <option value="">Select requested account type</option>
+                <option value="dispatcher">Dispatcher</option>
+                <option value="carrier">Carrier</option>
+                <option value="broker">Broker</option>
+                <option value="driver">Driver</option>
+              </select>
+
+              {requestedAccountType === "driver" ? (
+                <select
+                  className="input"
+                  value={requestedDriverSubtype ?? ""}
+                  onChange={(e) =>
+                    setRequestedDriverSubtype(e.target.value as DriverSubtype)
+                  }
+                >
+                  <option value="">Select driver type</option>
+                  <option value="owner_operator">Owner Operator</option>
+                  <option value="company_driver">Company Driver</option>
+                </select>
+              ) : null}
+
+              <textarea
+                className="input"
+                placeholder="Explain why this account type change is needed..."
+                value={changeReason}
+                onChange={(e) => setChangeReason(e.target.value)}
+              />
+
+              <button
+                className="btn"
+                type="button"
+                disabled={saving}
+                onClick={submitAccountTypeChangeRequest}
+              >
+                Submit Request
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {changeRequests.length > 0 ? (
+          <div style={{ display: "grid", gap: 10, marginTop: 18 }}>
+            {changeRequests.map((request) => (
+              <div key={request.id} className="card" style={{ padding: 14 }}>
+                <div style={{ fontWeight: 900 }}>
+                  Requested:{" "}
+                  {labelAccountType(
+                    request.requestedAccountType,
+                    request.requestedDriverSubtype ?? null
+                  )}
+                </div>
+
+                <div className="small" style={{ marginTop: 6 }}>
+                  Status: {request.status}
+                </div>
+              </div>
+            ))}
           </div>
         ) : null}
       </div>
