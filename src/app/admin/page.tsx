@@ -24,6 +24,11 @@ const adminCards = [
     text: "Review brokers, carriers, dispatchers, and drivers in the unified DispatchGuard trust graph.",
     href: "/dispatchguard",
   },
+  {
+    title: "Account Type Requests",
+    text: "Approve or deny user requests to change between broker, carrier, dispatcher, and driver account types.",
+    href: "/admin/account-type-requests",
+  },
 ];
 
 export default function AdminHomePage() {
