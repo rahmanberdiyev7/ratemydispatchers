@@ -6,25 +6,8 @@ import ThemeProvider from "@/components/ui/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "RateMyDispatchers",
-  description:
-    "DispatchGuard trust intelligence for dispatchers, brokers, drivers, carriers, reviews, reports, leads, and marketplace transparency.",
+  description: "DispatchGuard trust intelligence for logistics.",
 };
-
-const themeInitScript = `
-(function () {
-  try {
-    var key = "rmd_theme";
-    var raw = localStorage.getItem(key);
-    var theme =
-      raw === "dark" || raw === "bright" || raw === "futuristic"
-        ? raw
-        : "dark";
-    document.documentElement.setAttribute("data-theme", theme);
-  } catch (e) {
-    document.documentElement.setAttribute("data-theme", "dark");
-  }
-})();
-`;
 
 export default function RootLayout({
   children,
@@ -33,9 +16,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
       <body>
         <ThemeProvider>
           <ToastProvider>
